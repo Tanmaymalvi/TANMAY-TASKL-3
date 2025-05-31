@@ -1,0 +1,169 @@
+ <!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe - Human vs Computer</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(-45deg, #000000, #111111, #1a1a1a, #0f0f0f);
+      background-size: 400% 400%;
+      animation: gradient 10s ease infinite;
+      color: white;
+    }
+    @keyframes gradient {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    .glow {
+      text-shadow: 0 0 10px #00fff7, 0 0 20px #00fff7;
+    }
+    .btn-glow:hover {
+      box-shadow: 0 0 15px #00fff7, 0 0 25px #00fff7;
+      transform: scale(1.05);
+    }
+    .cell {
+      width: 80px;
+      height: 80px;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #00fff7;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen text-center">
+  <!-- Theme Sound -->
+  <audio autoplay loop>
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/30/audio_47c4bff537.mp3?filename=space-ambient-112887.mp3" type="audio/mpeg">
+  </audio>  <!-- Back Button --><a href="index.html" class="absolute top-4 left-4 text-white px-3 py-1 rounded bg-gray-800 hover:bg-gray-700">⬅ Back</a>
+
+  <h1 class="text-4xl md:text-5xl glow mb-8">Human vs Computer</h1>  <!-- Game Board -->  <div class="grid grid-cols-3 gap-2" id="board">
+    <div class="cell" data-cell></div>
+    <div class="cell" data-cell></div>
+    <div class="cell" data-cell></div>
+    <div class="cell" data-cell></div>
+    <div class="cell" data-cell></div>
+    <div class="cell" data-cell></div>
+    <div class="cell" data-cell></div>
+    <div class="cell" data-cell></div>
+    <div class="cell" data-cell></div>
+  </div>  <div class="mt-6">
+    <h2 id="status" class="text-2xl glow"></h2>
+    <button id="restart" class="mt-4 px-5 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded btn-glow">Restart</button>
+  </div>  <script>
+    const cells = document.querySelectorAll('[data-cell]');
+    const statusText = document.getElementById('status');
+    const restartBtn = document.getElementById('restart');
+    let currentPlayer = 'X';
+    let gameActive = true;
+    let boardState = Array(9).fill(null);
+
+    const winningCombinations = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    function handleClick(e) {
+      const index = [...cells].indexOf(e.target);
+      if (!gameActive || boardState[index]) return;
+      makeMove(index, currentPlayer);
+      if (checkWin()) {
+        statusText.textContent = `${currentPlayer} Wins!`;
+        gameActive = false;
+        triggerConfetti();
+        return;
+      } else if (!boardState.includes(null)) {
+        statusText.textContent = "It's a Draw!";
+        gameActive = false;
+        return;
+      }
+      currentPlayer = 'O';
+      statusText.textContent = `Computer's Turn`;
+      setTimeout(computerMove, 500);
+    }
+
+    function computerMove() {
+      let available = boardState.map((val, i) => val === null ? i : null).filter(i => i !== null);
+      if (available.length === 0) return;
+      let move = available[Math.floor(Math.random() * available.length)];
+      makeMove(move, 'O');
+      if (checkWin()) {
+        statusText.textContent = `Computer Wins!`;
+        gameActive = false;
+        triggerConfetti();
+        return;
+      } else if (!boardState.includes(null)) {
+        statusText.textContent = "It's a Draw!";
+        gameActive = false;
+        return;
+      }
+      currentPlayer = 'X';
+      statusText.textContent = `Your Turn`;
+    }
+
+    function makeMove(index, player) {
+      boardState[index] = player;
+      cells[index].textContent = player;
+      navigator.vibrate(100);
+    }
+
+    function checkWin() {
+      return winningCombinations.some(combination => {
+        return combination.every(i => boardState[i] === currentPlayer);
+      });
+    }
+
+    function resetGame() {
+      boardState = Array(9).fill(null);
+      cells.forEach(cell => cell.textContent = '');
+      currentPlayer = 'X';
+      gameActive = true;
+      statusText.textContent = "Your Turn";
+    }
+
+    function triggerConfetti() {
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = {
+        startVelocity: 30,
+        spread: 360,
+        ticks: 60,
+        zIndex: 1000
+      };
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+      const interval = setInterval(function () {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) return clearInterval(interval);
+        const particleCount = 50 * (timeLeft / duration);
+        confetti(Object.assign({}, defaults, {
+          particleCount,
+          origin: {
+            x: randomInRange(0.1, 0.3),
+            y: Math.random() - 0.2
+          }
+        }));
+        confetti(Object.assign({}, defaults, {
+          particleCount,
+          origin: {
+            x: randomInRange(0.7, 0.9),
+            y: Math.random() - 0.2
+          }
+        }));
+      }, 250);
+    }
+
+    cells.forEach(cell => cell.addEventListener('click', handleClick));
+    restartBtn.addEventListener('click', resetGame);
+    statusText.textContent = "Your Turn";
+  </script></body>
+</html>
